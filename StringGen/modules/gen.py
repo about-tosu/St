@@ -112,6 +112,14 @@ async def gen_session(message, user_id: int, telethon: bool = False):
     except (PhoneCodeExpired, PhoneCodeExpiredError):
         return await Anony.send_message(user_id, "» ᴏᴛᴘ ʜᴀs ᴇxᴘɪʀᴇᴅ.", reply_markup=retry_key)
     except (SessionPasswordNeeded, SessionPasswordNeededError):
-        return await Anony.send_message(user_id, "» 2-ꜱᴛᴇᴘ ᴠᴇʀɪꜰɪᴄᴀᴛɪᴏɴ ɪs ᴇɴᴀʙʟᴇᴅ. ᴇɴᴛᴇʀ ʏᴏᴜʀ ᴘᴀꜱꜱᴡᴏʀᴅ.", reply_markup=retry_key)
-
-    await Anony.send_message(user_id, "» ʟᴏɢɪɴ ꜱᴜᴄᴄᴇꜱꜱꜰᴜʟ!")
+    try:
+        password = await Anony.ask(
+            identifier=(message.chat.id, user_id, None),
+            text="» 2-ꜱᴛᴇᴘ ᴠᴇʀɪꜰɪᴄᴀᴛɪᴏɴ ᴇɴᴀʙʟᴇᴅ. ᴘʟᴇᴀsᴇ ᴇɴᴛᴇʀ ʏᴏᴜʀ ᴘᴀssᴡᴏʀᴅ:",
+            filters=filters.text,
+            timeout=300,
+        )
+        password = password.text.strip()
+        await client.check_password(password)
+    except PasswordHashInvalid:
+        return await Anony.send_message(user_id, "» ɪɴᴄᴏʀʀᴇᴄᴛ ᴘᴀssᴡᴏʀᴅ. ᴘʟᴇᴀsᴇ ᴛʀʏ ᴀɢᴀɪɴ.", reply_markup=retry_key)
