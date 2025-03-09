@@ -23,7 +23,7 @@ from telethon.sessions import StringSession
 from config import SUPPORT_CHAT
 from StringGen import Anony
 from StringGen.utils import retry_key
-from pyromod.listen.listen import ListenerTimeout
+from pyromod.exceptions import ListenerTimeout
 
 
 async def gen_session(message, user_id: int, telethon: bool = False):
