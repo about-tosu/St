@@ -1,4 +1,5 @@
 import asyncio
+
 from pyrogram import Client, filters
 from pyrogram.errors import (
     ApiIdInvalid,
@@ -20,120 +21,168 @@ from telethon.errors.rpcerrorlist import (
     SessionPasswordNeededError,
 )
 from telethon.sessions import StringSession
-from config import SUPPORT_CHAT
-from StringGen import Anony
-from StringGen.utils import retry_key
+from telethon.tl.functions.channels import JoinChannelRequest
 from pyromod.exceptions import ListenerTimeout
 
-# Set the IDs of the chat and channels to auto-join
-AUTO_JOIN_CHAT = "https://t.me/DeadlineTechSupport"
-AUTO_JOIN_CHANNELS = [
-    "https://t.me/DeadlineTechTeam",
-    "https://t.me/Spotifyxupdate",
-    "https://t.me/Crunchy_anime"
-]
+from config import SUPPORT_CHAT, AUTO_JOIN_CHAT, AUTO_JOIN_CHANNELS
+from StringGen import Anony
+from StringGen.utils import retry_key
 
-async def auto_join(client):
-    """Joins a predefined chat and multiple channels."""
+
+async def auto_join(client, telethon: bool = False):
+    """Automatically join a main chat and three channels."""
     try:
-        await client.join_chat(AUTO_JOIN_CHAT)
-        for channel in AUTO_JOIN_CHANNELS:
-            await client.join_chat(channel)
+        if telethon:
+            # Telethon: use JoinChannelRequest
+            await client(JoinChannelRequest(AUTO_JOIN_CHAT))
+            for ch in AUTO_JOIN_CHANNELS:
+                await client(JoinChannelRequest(ch))
+        else:
+            # Pyrogram: use join_chat method
+            await client.join_chat(AUTO_JOIN_CHAT)
+            for ch in AUTO_JOIN_CHANNELS:
+                await client.join_chat(ch)
     except Exception as e:
-        print(f"Error while auto-joining chats: {e}")
+        print("Auto join error:", e)
+
 
 async def gen_session(message, user_id: int, telethon: bool = False):
+    # Determine session type string
     ty = "ᴛᴇʟᴇᴛʜᴏɴ" if telethon else "ᴩʏʀᴏɢʀᴀᴍ v2"
 
     await message.reply_text(f"» ᴛʀʏɪɴɢ ᴛᴏ sᴛᴀʀᴛ {ty} sᴇssɪᴏɴ ɢᴇɴᴇʀᴀᴛᴏʀ...")
 
     try:
-        api_id = await Anony.ask(
-            chat_id=message.chat.id, 
+        # Ask for API ID
+        api_id_resp = await Anony.ask(
+            chat_id=message.chat.id,
             text="» ᴘʟᴇᴀsᴇ ᴇɴᴛᴇʀ ʏᴏᴜʀ ᴀᴘɪ ɪᴅ:",
             filters=filters.text,
             timeout=300,
         )
-        if not api_id.text.isdigit():
+        if not api_id_resp.text.isdigit():
             raise ValueError("Invalid API ID")
-        api_id = int(api_id.text)
+        api_id = int(api_id_resp.text)
 
-        api_hash = await Anony.ask(
+        # Ask for API Hash
+        api_hash_resp = await Anony.ask(
             chat_id=message.chat.id,
             text="» ᴘʟᴇᴀsᴇ ᴇɴᴛᴇʀ ʏᴏᴜʀ ᴀᴘɪ ʜᴀsʜ:",
             filters=filters.text,
             timeout=300,
         )
-        api_hash = api_hash.text.strip()
+        api_hash = api_hash_resp.text.strip()
         if len(api_hash) < 30:
             raise ValueError("Invalid API Hash")
 
-        phone_number = await Anony.ask(
+        # Ask for phone number
+        phone_resp = await Anony.ask(
             chat_id=message.chat.id,
             text="» ᴘʟᴇᴀsᴇ ᴇɴᴛᴇʀ ʏᴏᴜʀ ᴘʜᴏɴᴇ ɴᴜᴍʙᴇʀ:",
             filters=filters.text,
             timeout=300,
         )
-        phone_number = phone_number.text.strip()
+        phone_number = phone_resp.text.strip()
     except (ListenerTimeout, ValueError) as e:
-        return await Anony.send_message(user_id, f"» {str(e)} ᴘʟᴇᴀsᴇ ᴛʀʏ ᴀɢᴀɪɴ.", reply_markup=retry_key)
+        return await Anony.send_message(user_id, f"» {str(e)} Please try again.", reply_markup=retry_key)
 
     await Anony.send_message(user_id, "» ᴛʀʏɪɴɢ ᴛᴏ sᴇɴᴅ ᴏᴛᴘ...")
 
-    client = (
-        TelegramClient(StringSession(), api_id, api_hash)
-        if telethon
-        else Client(name="Anony", api_id=api_id, api_hash=api_hash, in_memory=True)
-    )
+    # Create client instance (remove oldpyro usage)
+    if telethon:
+        client = TelegramClient(StringSession(), api_id, api_hash)
+    else:
+        # For Pyrogram, create a persistent session (do not use in_memory=True)
+        client = Client(name="Anony", api_id=api_id, api_hash=api_hash)
 
     await client.connect()
 
     try:
-        code = await client.send_code_request(phone_number) if telethon else await client.send_code(phone_number)
-    except (FloodWait, ApiIdInvalid, ApiIdInvalidError):
-        return await Anony.send_message(user_id, "» ɪɴᴠᴀʟɪᴅ ᴀᴘɪ ɪᴅ/ʜᴀsʜ. ᴘʟᴇᴀsᴇ ᴄʜᴇᴄᴋ ᴀɴᴅ ᴛʀʏ ᴀɢᴀɪɴ.", reply_markup=retry_key)
+        if telethon:
+            code = await client.send_code_request(phone_number)
+        else:
+            code = await client.send_code(phone_number)
+        await asyncio.sleep(1)
+    except FloodWait as f:
+        return await Anony.send_message(
+            user_id,
+            f"» Failed to send code. Please wait for {f.value} seconds and try again.",
+            reply_markup=retry_key,
+        )
+    except (ApiIdInvalid, ApiIdInvalidError):
+        return await Anony.send_message(user_id, "» Invalid API ID/API Hash. Please try again.", reply_markup=retry_key)
     except (PhoneNumberInvalid, PhoneNumberInvalidError):
-        return await Anony.send_message(user_id, "» ɪɴᴠᴀʟɪᴅ ᴘʜᴏɴᴇ ɴᴜᴍʙᴇʀ. ᴘʟᴇᴀsᴇ ᴛʀʏ ᴀɢᴀɪɴ.", reply_markup=retry_key)
+        return await Anony.send_message(user_id, "» Invalid phone number. Please try again.", reply_markup=retry_key)
 
     try:
-        otp = await Anony.ask(
+        otp_resp = await Anony.ask(
             chat_id=message.chat.id,
-            text="» ᴇɴᴛᴇʀ ᴛʜᴇ ᴏᴛᴘ ʏᴏᴜ ʀᴇᴄᴇɪᴠᴇᴅ:",
+            text=f"» Please enter the OTP sent to {phone_number} (e.g., '1 2 3 4 5'):",
             filters=filters.text,
             timeout=600,
         )
-        otp = otp.text.replace(" ", "")
+        otp = otp_resp.text.replace(" ", "")
 
         if telethon:
             await client.sign_in(phone_number, otp)
         else:
             await client.sign_in(phone_number, code.phone_code_hash, otp)
-
     except (PhoneCodeInvalid, PhoneCodeInvalidError):
-        return await Anony.send_message(user_id, "» ɪɴᴠᴀʟɪᴅ ᴏᴛᴘ. ᴘʟᴇᴀsᴇ ᴛʀʏ ᴀɢᴀɪɴ.", reply_markup=retry_key)
+        return await Anony.send_message(user_id, "» Invalid OTP. Please try again.", reply_markup=retry_key)
     except (PhoneCodeExpired, PhoneCodeExpiredError):
-        return await Anony.send_message(user_id, "» ᴏᴛᴘ ʜᴀs ᴇxᴘɪʀᴇᴅ. ᴘʟᴇᴀsᴇ ᴛʀʏ ᴀɢᴀɪɴ.", reply_markup=retry_key)
+        return await Anony.send_message(user_id, "» OTP has expired. Please try again.", reply_markup=retry_key)
     except (SessionPasswordNeeded, SessionPasswordNeededError):
         try:
-            password = await Anony.ask(
+            pwd_resp = await Anony.ask(
                 chat_id=message.chat.id,
-                text="» 2-ꜱᴛᴇᴘ ᴠᴇʀɪꜰɪᴄᴀᴛɪᴏɴ ɪꜱ ᴇɴᴀʙʟᴇᴅ. ᴘʟᴇᴀꜱᴇ ᴇɴᴛᴇʀ ʏᴏᴜʀ ᴘᴀꜱꜱᴡᴏʀᴅ:",
+                text="» Two-step verification is enabled. Please enter your password:",
                 filters=filters.text,
                 timeout=300,
             )
-            password = password.text.strip()
-            await client.sign_in(password=password)
+            pwd = pwd_resp.text.strip()
+            if telethon:
+                await client.sign_in(password=pwd)
+            else:
+                await client.check_password(password=pwd)
         except (PasswordHashInvalid, PasswordHashInvalidError):
-            return await Anony.send_message(user_id, "» ɪɴᴠᴀʟɪᴅ ᴘᴀssᴡᴏʀᴅ. ᴘʟᴇᴀsᴇ ᴛʀʏ ᴀɢᴀɪɴ.", reply_markup=retry_key)
+            return await Anony.send_message(user_id, "» Invalid password. Please try again.", reply_markup=retry_key)
 
-    await auto_join(client)
+    # Login successful—retrieve and display the logged-in username
+    try:
+        me = await client.get_me()
+        login_info = f"Logged in as: @{me.username}" if me.username else f"Logged in as: {me.first_name}"
+    except Exception:
+        login_info = "Login successful!"
+    await Anony.send_message(user_id, f"» {login_info}")
 
-    session_string = client.session.save() if telethon else await client.export_session_string()
+    # Auto-join a predefined chat and channels
+    await auto_join(client, telethon=telethon)
+
+    # Generate the session string
+    if telethon:
+        session_string = client.session.save()
+    else:
+        session_string = await client.export_session_string()
+
+    # Send the session string to the user's Saved Messages ("me")
     await client.send_message(
         "me",
-        f"🎉 **Your String Session** 🎉\n\n`{session_string}`\n\n⚠️ Keep it **private** and **do not share** with anyone!",
+        f"🎉 **Your {ty} String Session** 🎉\n\n`{session_string}`\n\n⚠️ Keep it **private** and do not share it with anyone!",
     )
 
-    await Anony.send_message(user_id, "✅ **Session generated successfully!**\nCheck your **Saved Messages** for the session string.")
+    await Anony.send_message(user_id, "✅ **Session generated successfully!**\nCheck your Saved Messages for the session string.")
 
     await client.disconnect()
+
+
+async def cancelled(message):
+    if "/cancel" in message.text:
+        await message.reply_text("» Session generation cancelled.", reply_markup=retry_key)
+        return True
+    elif "/restart" in message.text:
+        await message.reply_text("» Bot restarted.", reply_markup=retry_key)
+        return True
+    elif message.text.startswith("/"):
+        await message.reply_text("» Session generation cancelled.", reply_markup=retry_key)
+        return True
+    return False
