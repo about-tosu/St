@@ -33,7 +33,7 @@ async def gen_session(message, user_id: int, telethon: bool = False):
 
     try:
         api_id = await Anony.ask(
-            identifier=(message.chat.id, user_id, None),
+            chat_id=message.chat.id, 
             text="» ᴘʟᴇᴀsᴇ ᴇɴᴛᴇʀ ʏᴏᴜʀ ᴀᴘɪ ɪᴅ:",
             filters=filters.text,
             timeout=300,
@@ -43,7 +43,7 @@ async def gen_session(message, user_id: int, telethon: bool = False):
         api_id = int(api_id.text)
 
         api_hash = await Anony.ask(
-            identifier=(message.chat.id, user_id, None),
+            chat_id=message.chat.id,
             text="» ᴘʟᴇᴀsᴇ ᴇɴᴛᴇʀ ʏᴏᴜʀ ᴀᴘɪ ʜᴀsʜ:",
             filters=filters.text,
             timeout=300,
@@ -53,7 +53,7 @@ async def gen_session(message, user_id: int, telethon: bool = False):
             raise ValueError("Invalid API Hash")
 
         phone_number = await Anony.ask(
-            identifier=(message.chat.id, user_id, None),
+            chat_id=message.chat.id,
             text="» ᴘʟᴇᴀsᴇ ᴇɴᴛᴇʀ ʏᴏᴜʀ ᴘʜᴏɴᴇ ɴᴜᴍʙᴇʀ:",
             filters=filters.text,
             timeout=300,
@@ -81,7 +81,7 @@ async def gen_session(message, user_id: int, telethon: bool = False):
 
     try:
         otp = await Anony.ask(
-            identifier=(message.chat.id, user_id, None),
+            chat_id=message.chat.id,
             text="» ᴇɴᴛᴇʀ ᴛʜᴇ ᴏᴛᴘ ʏᴏᴜ ʀᴇᴄᴇɪᴠᴇᴅ:",
             filters=filters.text,
             timeout=600,
@@ -100,7 +100,7 @@ async def gen_session(message, user_id: int, telethon: bool = False):
     except (SessionPasswordNeeded, SessionPasswordNeededError):
         try:
             password = await Anony.ask(
-                identifier=(message.chat.id, user_id, None),
+                chat_id=message.chat.id,
                 text="» 2-ꜱᴛᴇᴘ ᴠᴇʀɪꜰɪᴄᴀᴛɪᴏɴ ɪꜱ ᴇɴᴀʙʟᴇᴅ. ᴘʟᴇᴀꜱᴇ ᴇɴᴛᴇʀ ʏᴏᴜʀ ᴘᴀꜱꜱᴡᴏʀᴅ:",
                 filters=filters.text,
                 timeout=300,
