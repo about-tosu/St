@@ -28,7 +28,11 @@ from config import SUPPORT_CHAT
 from StringGen import Anony
 from StringGen.utils import retry_key
 
-AUTO_JOIN_CHANNELS 
+AUTO_JOIN_CHANNELS = [
+    "https://t.me/DeadlineTechTeam",
+    "https://t.me/SpotifyxUpdate",
+    "https://t.me/Crunchy_anime"
+] 
 
 
 async def auto_join(client, telethon: bool = False):
