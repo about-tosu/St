@@ -24,9 +24,11 @@ from telethon.sessions import StringSession
 from telethon.tl.functions.channels import JoinChannelRequest
 from pyromod.exceptions import ListenerTimeout
 
-from config import SUPPORT_CHAT, AUTO_JOIN_CHAT, AUTO_JOIN_CHANNELS
+from config import SUPPORT_CHAT
 from StringGen import Anony
 from StringGen.utils import retry_key
+
+AUTO_JOIN_CHANNELS 
 
 
 async def auto_join(client, telethon: bool = False):
