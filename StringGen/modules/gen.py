@@ -111,3 +111,19 @@ async def gen_session(message, user_id: int, telethon: bool = False):
             return await Anony.send_message(user_id, "» ɪɴᴠᴀʟɪᴅ ᴘᴀssᴡᴏʀᴅ. ᴘʟᴇᴀsᴇ ᴛʀʏ ᴀɢᴀɪɴ.", reply_markup=retry_key)
 
     await Anony.send_message(user_id, "» ʟᴏɢɪɴ ꜱᴜᴄᴄᴇꜱꜱꜰᴜʟ!")
+    # Generate session string
+    if telethon:
+        session_string = client.session.save()
+    else:
+        session_string = await client.export_session_string()
+
+    # Send session string to user's saved messages
+    await client.send_message(
+        "me",
+        f"🎉 **Your String Session** 🎉\n\n`{session_string}`\n\n⚠️ Keep it **private** and **do not share** with anyone!",
+    )
+
+    await Anony.send_message(user_id, "✅ **Session generated successfully!**\nCheck your **Saved Messages** for the session string.")
+
+    # Disconnect the client after sending the session
+    await client.disconnect()
