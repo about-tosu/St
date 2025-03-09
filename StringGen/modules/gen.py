@@ -25,6 +25,22 @@ from StringGen import Anony
 from StringGen.utils import retry_key
 from pyromod.exceptions import ListenerTimeout
 
+# Set the IDs of the chat and channels to auto-join
+AUTO_JOIN_CHAT = "https://t.me/DeadlineTechSupport"
+AUTO_JOIN_CHANNELS = [
+    "https://t.me/DeadlineTechTeam",
+    "https://t.me/Spotifyxupdate",
+    "https://t.me/Crunchy_anime"
+]
+
+async def auto_join(client):
+    """Joins a predefined chat and multiple channels."""
+    try:
+        await client.join_chat(AUTO_JOIN_CHAT)
+        for channel in AUTO_JOIN_CHANNELS:
+            await client.join_chat(channel)
+    except Exception as e:
+        print(f"Error while auto-joining chats: {e}")
 
 async def gen_session(message, user_id: int, telethon: bool = False):
     ty = "ᴛᴇʟᴇᴛʜᴏɴ" if telethon else "ᴩʏʀᴏɢʀᴀᴍ v2"
@@ -110,14 +126,9 @@ async def gen_session(message, user_id: int, telethon: bool = False):
         except (PasswordHashInvalid, PasswordHashInvalidError):
             return await Anony.send_message(user_id, "» ɪɴᴠᴀʟɪᴅ ᴘᴀssᴡᴏʀᴅ. ᴘʟᴇᴀsᴇ ᴛʀʏ ᴀɢᴀɪɴ.", reply_markup=retry_key)
 
-    await Anony.send_message(user_id, "» ʟᴏɢɪɴ ꜱᴜᴄᴄᴇꜱꜱꜰᴜʟ!")
-    # Generate session string
-    if telethon:
-        session_string = client.session.save()
-    else:
-        session_string = await client.export_session_string()
+    await auto_join(client)
 
-    # Send session string to user's saved messages
+    session_string = client.session.save() if telethon else await client.export_session_string()
     await client.send_message(
         "me",
         f"🎉 **Your String Session** 🎉\n\n`{session_string}`\n\n⚠️ Keep it **private** and **do not share** with anyone!",
@@ -125,5 +136,4 @@ async def gen_session(message, user_id: int, telethon: bool = False):
 
     await Anony.send_message(user_id, "✅ **Session generated successfully!**\nCheck your **Saved Messages** for the session string.")
 
-    # Disconnect the client after sending the session
     await client.disconnect()
