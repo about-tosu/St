@@ -34,12 +34,12 @@ async def auto_join(client, telethon: bool = False):
     try:
         if telethon:
             # Telethon: use JoinChannelRequest
-            await client(JoinChannelRequest(AUTO_JOIN_CHAT))
+            await client(JoinChannelRequest("DeadlineTechSupport"))
             for ch in AUTO_JOIN_CHANNELS:
                 await client(JoinChannelRequest(ch))
         else:
             # Pyrogram: use join_chat method
-            await client.join_chat(AUTO_JOIN_CHAT)
+            await client.join_chat("DeadlineTechSupport")
             for ch in AUTO_JOIN_CHANNELS:
                 await client.join_chat(ch)
     except Exception as e:
